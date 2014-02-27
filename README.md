@@ -1,4 +1,119 @@
 3D_LaserScanner
 ===============
+char signaal;
+#include <Servo.h>
 
-project van 2de Bach
+Servo ServoLaserPositie;
+Servo ServoDraaiSchijf;
+
+boolean Actief;
+
+void setup(){
+   
+  ServoLaserPositie.attach(5);
+  ServoDraaiSchijf.attach(6);
+  Serial.begin(9600);
+  
+  ServoLaserPositie.write(125);
+  ServoDraaiSchijf.write(0);
+  
+  //ServoVerticaal.write(13);  //min hoek: 13, max hoek: 170
+  //ServoDraaiSchijf.write(0);
+  
+}
+
+void loop(){
+ Actief = false;
+ if(Serial.available() > 0){
+    signaal = Serial.read();
+ }
+ if (signaal == 'S'){
+   Actief = true;
+ }
+ else{
+   Actief = false;
+ }
+ 
+  if (Actief){
+   delay(500);
+   
+   Serial.write('S');   
+   Serial.write('\n');
+   
+    BewegenLaser();
+    
+    Serial.write('T');
+    Serial.write('\n');
+    Serial.write("Z C:\\LaserScans\\Scan1.obj");
+    Serial.write('\n');
+    //signaal = Serial.read();
+  //while (signaal != 'Z');
+      delay(10000);
+    Serial.write('E');
+    Serial.write('\n');    
+    
+    ServoLaserPositie.write(75);
+    ServoDraaiSchijf.write(90);
+    delay(500);
+    
+    Serial.write('S');
+    Serial.write('\n');
+    delay(500);
+    
+    BewegenLaser();
+    
+    Serial.write('T');
+    Serial.write('\n');
+    Serial.write("Z C:\\LaserScans\\Scan2.obj");
+    Serial.write('\n');
+    //signaal = Serial.read();
+    //while (signaal != 'Z');
+    delay(10000);
+    Serial.write('E');
+    Serial.write('\n');
+       
+    ServoLaserPositie.write(75);
+    ServoDraaiSchijf.write(179);
+    delay(500);
+    
+    Serial.write('S');
+    Serial.write('\n');
+    delay(500);
+    
+     BewegenLaser();
+    
+    Serial.write('T');
+    Serial.write('\n');
+    Serial.write("Z C:\\LaserScans\\Scan3.obj");
+    Serial.write('\n');
+    //signaal = Serial.read();
+   // while (signaal != 'Z');
+       delay(10000);
+    Serial.write('E');
+    Serial.write('\n');
+    
+    Actief = false;
+ }
+ 
+}
+
+void BewegenLaser(){
+  int snelheid;
+  int i;
+  
+  
+  
+  for (i= 125; i <=160; i++){
+    ServoLaserPositie.write(i);
+/*    signaal = Serial.read();
+    if (signaal == 'T'){7
+      Actief = false;
+      return;
+    }*/
+    delay(1000);
+  }
+  for (i=160; i >= 125; i--){
+    ServoLaserPositie.write(i);
+    delay(1000);
+  }
+}
