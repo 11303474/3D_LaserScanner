@@ -1,0 +1,163 @@
+#include <Servo.h>    //bibliotheek om de servo's te kunnen aansturen
+
+Servo ServoLaserPositie;    // aanmaken van de servo om de laser te bewegen
+Servo ServoDraaiSchijf;     // aanmaken van de servo om de draaischijf te kunnen bewegen
+const int laser = 8;        // vastleggen van de pin waarop de laser gestuurd wordt
+char signaal;               // aanmaken van het char dat gebruikt wordt voor de seriële communicatie
+const int startpositieLaser = 160; // vastleggen van de startpositie van de laser
+const int maxUitwijkingLaser = 125; // vastleggen van de maximale uitwijking van de laser
+
+boolean Actief;             // boolean die gebruikt wordt om het programma te starten en te stoppen
+
+void setup(){
+  
+  //verbinden van de 2 servo's 
+  ServoLaserPositie.attach(10); 
+  ServoDraaiSchijf.attach(9);
+  
+  //connecteren en startwaarde van laser en testLED
+  pinMode(laser, OUTPUT);
+  digitalWrite(laser, LOW);
+  
+  //starten seriele communicatie
+  Serial.begin(9600);
+  
+  //starthoek van de 2 servo's
+  ServoLaserPositie.write(160); //min hoek: 125, max hoek: 160
+  ServoDraaiSchijf.write(0);
+}
+
+void loop(){
+  
+ Actief = false; //voorwaarde voor de scanlus
+ 
+ //controleren wanneer de scan start
+ if(Serial.available() > 0){
+ }
+ 
+ if (Serial.read() == 'S'){
+   Actief = true;
+   signaal = 'S';
+ }
+ else{
+   Actief = false;
+   digitalWrite(laser,LOW); //uitzetten van de laser
+ }
+ 
+  if (Actief == true){
+    
+   delay(500);
+   
+   nieuwe_scan();
+   BewegenLaser();
+   if (Actief == true){
+     save_scan(1);
+     
+     
+     
+     //laser op startpositie en draaischijf 90° gedraaid   
+     ServoLaserPositie.write(160);
+     ServoDraaiSchijf.write(90);
+     delay(500);
+        
+     nieuwe_scan();
+     BewegenLaser();
+   }
+   if (Actief == true){
+     save_scan(2);
+     
+     //laser op startpositie en draaischijf 90° gedraaid      
+      ServoLaserPositie.write(160);
+      ServoDraaiSchijf.write(179);
+      delay(500);
+        
+      nieuwe_scan();
+      BewegenLaser();
+   }
+   if (Actief == true){
+     save_scan(3);
+   }
+       
+   //stoppen van de lus;
+   Actief = false;
+  
+  }
+  
+  //reset
+  if (Actief == false){
+    ServoLaserPositie.write(160); //min hoek: 125, max hoek: 160
+    ServoDraaiSchijf.write(0);
+  }
+}
+
+void nieuwe_scan(){
+  digitalWrite(laser,LOW); //uitzetten van de laser
+  Serial.println('3'); //Mode texture
+  while(Serial.read() != '3'); //wachten tot klaar voor texture
+  delay(500);
+  Serial.println('G'); //Grab Texture
+  while(Serial.read() != '4'); //wachten tot texture klaar is
+  delay(500);
+  digitalWrite(laser,HIGH); //aanzetten van de laser
+  Serial.println('2'); //Mode Scan
+  while(Serial.read() != '2'); //wachten tot mode scan klaar is
+  delay(500);
+  Serial.println('S'); //Start Scan
+}
+
+void save_scan(int nummer){
+  //Stop scan
+  Serial.println('T');
+  
+  //Save Scan
+  if (nummer == 1){
+    Serial.println("Z C:\\LaserScans\\Scan1.obj"); 
+    
+  }
+  else if (nummer == 2){
+    Serial.println("Z C:\\LaserScans\\Scan2.obj");
+    
+  }
+  else if (nummer == 3){
+    Serial.println("Z C:\\LaserScans\\Scan3.obj");
+    
+  }
+  else{
+    Serial.println("Z C:\\LaserScans\\Scan_fout.obj");
+  }
+  
+  //wachten tot save klaar is
+  while(Serial.read() != 'Z');
+   Serial.println('A');
+  //Erase Scan
+  Serial.println('E'); 
+  
+  //Erase Texture
+  Serial.println('F'); 
+  Serial.read(); //clear buffer
+}
+
+void BewegenLaser(){
+int i;
+  //richting 1
+  for (i= startpositieLaser; i >=maxUitwijkingLaser &&  signaal != 'T'; i--){
+      ServoLaserPositie.write(i);
+      signaal = Serial.read();
+      delay(1000);
+     }
+   if (signaal == 'T'){
+     Serial.println('T');
+     Actief = false;
+   }
+   
+  //richting 2
+  for (i=maxUitwijkingLaser; i <= startpositieLaser && signaal != 'T'; i++){
+      ServoLaserPositie.write(i);
+      signaal = Serial.read();
+      delay(1000);
+      }
+  if (signaal == 'T'){
+     Serial.println('T');
+     Actief = false;
+   }
+}
